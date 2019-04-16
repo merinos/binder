@@ -75,7 +75,7 @@ record in {{ form.zone_name.value }}
   <div class="form-group{% if form.record_data.errors %} has-error{% endif %}">
     <label for="record_data" class="col-sm-3 control-label">Record Data:</label>
     <div class="col-sm-5 col-md-4">
-      <input id="record_data" name="record_data" type="text" class="form-control"{% if form.record_data.value %} value="{{ form.record_data.value }}"{% endif %} />
+      <textarea id="record_data" name="record_data" rows = "5" type="text" class="form-control">{% if form.record_data.value %}{{ form.record_data.value }}{% endif %}</textarea>
     </div>
     {% if form.record_data.errors %}
     <div class="col-sm-4 col-md-5">

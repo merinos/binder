@@ -3,6 +3,8 @@
 # Standard Imports
 import base64
 import binascii
+import hashlib
+import shlex
 import socket
 
 # 3rd Party
@@ -221,14 +223,20 @@ class BindServer(models.Model):
         for current_name in names:
             current_record = zone[current_name].to_text(current_name)
             for split_record in current_record.split("\n"):
-                current_record = split_record.split(" ")
+                current_record = shlex.split(split_record)
                 rr_dict = {}
                 rr_dict["rr_name"] = current_record[0]
                 rr_dict["rr_ttl"] = current_record[1]
                 rr_dict["rr_class"] = current_record[2]
                 rr_dict["rr_type"] = current_record[3]
                 rr_dict["rr_data"] = current_record[4]
-
+                rr_dict["rr_uid"] = hashlib.sha1("{}{}{}{}{}".format(
+                            rr_dict["rr_name"],
+                            rr_dict["rr_ttl"],
+                            rr_dict["rr_class"],
+                            rr_dict["rr_type"],
+                            rr_dict["rr_data"],
+                            ).encode()).hexdigest()
                 record_array.append(rr_dict)
 
         return record_array

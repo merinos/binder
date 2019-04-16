@@ -162,7 +162,10 @@ TTL_CHOICES = ((300, "5 minutes"),
 
 RECORD_TYPE_CHOICES = (("A", "A"),
                        ("AAAA", "AAAA"),
-                       ("CNAME", "CNAME"))
+                       ("CNAME", "CNAME"),
+                       ("TXT", "TXT"))
+
+SESSION_SAVE_EVERY_REQUEST = True
 
 LOGIN_REDIRECT_URL = '/'
 

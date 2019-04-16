@@ -1,5 +1,6 @@
 # Binder Views
 
+import copy
 import subprocess
 
 # 3rd Party
@@ -72,6 +73,13 @@ def view_zone_records(request, dns_server, zone_name):
         return render(request, "bcommon/list_zone.html",
                       {"zone_name": zone_name,
                        "dns_server": this_server})
+    if dns_server not in request.session:
+        request.session[dns_server] = {}
+    if zone_name not in request.session[dns_server]:
+        request.session[dns_server][zone_name] = {}
+    for record in zone_array:
+        request.session[dns_server][zone_name][record['rr_uid']] = copy.copy(record)
+    request.session.modified = True
 
     return render(request, "bcommon/list_zone.html",
                   {"zone_array": zone_array,
@@ -126,8 +134,7 @@ def view_add_record(request, dns_server, zone_name):
                   {"dns_server": this_server,
                    "form": form})
 
-def view_edit_record(request, dns_server, zone_name, record_name=None,
-                     record_type=None, record_data=None, record_ttl=None):
+def view_edit_record(request, dns_server, zone_name, uid):
     """View to edit an RR record to DNS zone."""
     this_server = get_object_or_404(models.BindServer, hostname=dns_server)
     if request.method == 'POST':
@@ -161,11 +168,22 @@ def view_edit_record(request, dns_server, zone_name, record_name=None,
     else:
         key_id = models.BindServer.objects.get(
             hostname=dns_server).default_transfer_key.id
+        record = None
+        if (dns_server in request.session and
+                zone_name in request.session[dns_server] and
+                uid in request.session[dns_server][zone_name]):
+            record = request.session[dns_server][zone_name][uid]
+        else:
+            messages.error(request, 'Record not found: please return to your zone records')
+            form = forms.FormAddForwardRecord(initial={'zone_name': zone_name, 'key_name': key_id})
+            return render(request, "bcommon/add_record_form.html",
+                    {"dns_server": this_server,
+                    "form": form})
         form = forms.FormAddForwardRecord(initial={'zone_name': zone_name,
-                                                   'record_name': record_name,
-                                                   'record_data': record_data,
-                                                   'ttl': record_ttl,
-                                                   'record_type': record_type,
+                                                   'record_name': record['rr_name'],
+                                                   'record_data': record['rr_data'],
+                                                   'ttl': record['rr_ttl'],
+                                                   'record_type': record['rr_type'],
                                                    'key_name': key_id
         })
 

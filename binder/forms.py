@@ -56,7 +56,7 @@ class FormAddForwardRecord(forms.Form):
                                    required=False)
     record_type = forms.ChoiceField(choices=settings.RECORD_TYPE_CHOICES)
     zone_name = forms.CharField(max_length=100)
-    record_data = forms.CharField(max_length=100)
+    record_data = forms.CharField(max_length=1000, widget=forms.Textarea)
     ttl = forms.ChoiceField(choices=settings.TTL_CHOICES)
     create_reverse = forms.BooleanField(required=False)
     key_name = forms.ModelChoiceField(queryset=Key.objects.all(), required=True)
