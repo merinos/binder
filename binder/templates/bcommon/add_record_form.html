@@ -13,8 +13,13 @@ record in {{ form.zone_name.value }}
 
 {% block body %}
 
+{% if 'add_record' in request.path %}
 <form class="form-horizontal" action="{% url "add_record" dns_server=dns_server zone_name=form.zone_name.value %}" method="POST">{% csrf_token %}
   <legend>Create Record</legend>
+{% elif 'edit_record' in request.path %}
+<form class="form-horizontal" action="{% url "edit_record" dns_server=dns_server zone_name=form.zone_name.value uid=uid %}" method="POST">{% csrf_token %}
+  <legend>Edit Record</legend>
+{% endif %}
 
   <div class="form-group{% if form.dns_server.errors %} has-error{% endif %}">
     <label for="dns_server" class="col-sm-3 control-label">DNS Server:</label>

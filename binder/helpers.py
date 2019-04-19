@@ -19,7 +19,7 @@ from binder.exceptions import KeyringException, RecordException
 
 
 def add_record(dns_server, zone_name, record_name, record_type, record_data,
-               ttl, key_name, create_reverse=False):
+               ttl, key_name, create_reverse=False, replace=False):
     """Parse passed elements and determine which records to create.
 
     Args:
@@ -31,6 +31,7 @@ def add_record(dns_server, zone_name, record_name, record_type, record_data,
       Int ttl
       String key_name (from Key model)
       Boolean create_reverse (Whether to create a PTR record, default False)
+      Boolean replace (Replace the record instead of add it)
 
     Return:
       Dict containing {description, output} from record creation
@@ -44,7 +45,8 @@ def add_record(dns_server, zone_name, record_name, record_type, record_data,
                                              record_type,
                                              record_data,
                                              ttl,
-                                             key_name)})
+                                             key_name,
+                                             replace)})
 
     """If requested, create a reverse PTR record.
 
@@ -67,7 +69,8 @@ def add_record(dns_server, zone_name, record_name, record_type, record_data,
                                                  "PTR",
                                                  "%s.%s." % (record_name, zone_name),
                                                  ttl,
-                                                 key_name)})
+                                                 key_name,
+                                                 True)})
 
     return response
 
@@ -81,7 +84,8 @@ def add_cname_record(dns_server, zone_name, cname, originating_record, ttl,
                            "CNAME",
                            originating_record + ".",
                            ttl,
-                           key_name)
+                           key_name,
+                           True)
 
     return [{"description": "CNAME %s.%s points to %s" %
              (cname, zone_name, originating_record),
@@ -130,7 +134,7 @@ def delete_record(dns_server, rr_list, key_name):
 
 
 def create_update(dns_server, zone_name, record_name, record_type, record_data,
-                  ttl, key_name):
+                  ttl, key_name, replace=False):
     """Update/Create DNS record of name and type with passed data and ttl."""
     server = models.BindServer.objects.get(hostname=dns_server)
 
@@ -150,7 +154,10 @@ def create_update(dns_server, zone_name, record_name, record_type, record_data,
                                    keyalgorithm=algorithm)
     if record_type == "TXT":
         record_data = '"{}"'.format(record_data)
-    dns_update.replace(record_name, ttl, record_type, record_data)
+    if replace:
+        dns_update.replace(record_name, ttl, record_type, record_data)
+    else:
+        dns_update.add(record_name, ttl, record_type, record_data)
     output = send_dns_update(dns_update, dns_server, server.dns_port, key_name)
 
     return output

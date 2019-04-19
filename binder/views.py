@@ -12,6 +12,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from binder import forms, helpers, models
 from binder import exceptions
 
+def get_record_from_uid(request, uid, dns_server, zone_name):
+    if (dns_server in request.session and
+            zone_name in request.session[dns_server] and
+            uid in request.session[dns_server][zone_name]):
+        return request.session[dns_server][zone_name][uid]
+
+
 def home_index(request):
     """List the main index page for Binder."""
     return render(request, "index.html")
@@ -145,6 +152,12 @@ def view_edit_record(request, dns_server, zone_name, uid):
         if form.is_valid():
             form_cleaned = form.cleaned_data
             try:
+                record = get_record_from_uid(request, uid, dns_server, zone_name)
+                if record:
+                    helpers.delete_record(form_cleaned["dns_server"],
+                            str(form_cleaned["zone_name"]),
+                            record,
+                            form_cleaned["key_name"])
                 helpers.add_record(form_cleaned["dns_server"],
                                    str(form_cleaned["zone_name"]),
                                    str(form_cleaned["record_name"]),
@@ -168,17 +181,14 @@ def view_edit_record(request, dns_server, zone_name, uid):
     else:
         key_id = models.BindServer.objects.get(
             hostname=dns_server).default_transfer_key.id
-        record = None
-        if (dns_server in request.session and
-                zone_name in request.session[dns_server] and
-                uid in request.session[dns_server][zone_name]):
-            record = request.session[dns_server][zone_name][uid]
-        else:
+        record = get_record_from_uid(request, uid, dns_server, zone_name)
+        if not record:
             messages.error(request, 'Record not found: please return to your zone records')
             form = forms.FormAddForwardRecord(initial={'zone_name': zone_name, 'key_name': key_id})
             return render(request, "bcommon/add_record_form.html",
                     {"dns_server": this_server,
-                    "form": form})
+                    "form": form,
+                    "uid": uid})
         form = forms.FormAddForwardRecord(initial={'zone_name': zone_name,
                                                    'record_name': record['rr_name'],
                                                    'record_data': record['rr_data'],
@@ -189,8 +199,8 @@ def view_edit_record(request, dns_server, zone_name, uid):
 
     return render(request, "bcommon/add_record_form.html",
                   {"dns_server": this_server,
-                   "form": form})
-
+                   "form": form,
+                   "uid": uid})
 
 def view_add_cname_record(request, dns_server, zone_name, record_name):
     """View to allow to add CNAME records."""
