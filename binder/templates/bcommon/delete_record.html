@@ -31,7 +31,7 @@
     <label for="rr_list" class="col-sm-3 control-label">Records:</label>
     <input type="hidden" id="rr_list" name="rr_list" value="{{ rr_list }}" />
     <div class="col-sm-5 col-md-4">
-      <p class="form-control-static">{% for current_rr in rr_list %}{{ current_rr }}<br /> {% endfor %}</p>
+      <p class="form-control-static">{% for r in records %}{{ r.rr_name }} {{ r.rr_type }} {{ r.rr_data }}<br /> {% endfor %}</p>
     </div>
   </div>
 

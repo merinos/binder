@@ -92,8 +92,8 @@ def add_cname_record(dns_server, zone_name, cname, originating_record, ttl,
              "output": output}]
 
 
-def delete_record(dns_server, rr_list, key_name):
-    """Delete a list of DNS records passed as strings in rr_items."""
+def delete_record(dns_server, zone_name, record, key_name):
+    """Delete a DNS record passed as a dictionary."""
     server = models.BindServer.objects.get(hostname=dns_server)
 
     logger = logging.getLogger('binder.helpers')
@@ -108,27 +108,33 @@ def delete_record(dns_server, rr_list, key_name):
         algorithm = transfer_key.algorithm
 
     delete_response = []
-    for current_rr in rr_list:
-        record_list = current_rr.split(".", 1)
-        record = record_list[0]
-        domain = record_list[1]
-        dns_update = dns.update.Update(domain,
-                                       keyring=keyring,
-                                       keyalgorithm=algorithm)
-        dns_update.delete(record)
-        try:
-            output = send_dns_update(dns_update,
-                                    dns_server,
-                                    server.dns_port,
-                                    key_name)
-        except (KeyringException, RecordException) as exc:
-            delete_response.append({"description": exc,
-                                    "record": current_rr,
-                                    "success": False})
-        else:
-            delete_response.append({"description": output,
-                                    "record": current_rr,
-                                    "success": True})
+    dns_update = dns.update.Update(zone_name,
+                                   keyring=keyring,
+                                   keyalgorithm=algorithm)
+    dns_update.delete(record['rr_name'],
+            record['rr_type'],
+            record['rr_data'])
+    try:
+        output = send_dns_update(dns_update,
+                                dns_server,
+                                server.dns_port,
+                                key_name)
+    except (KeyringException, RecordException) as exc:
+        delete_response = {"description": exc,
+                           "record": "%s %s %s" % (
+                                   record['rr_name'],
+                                   record['rr_type'],
+                                   record['rr_data']
+                                   ),
+                           "success": False}
+    else:
+        delete_response = {"description": output,
+                           "record": "%s %s %s" % (
+                                   record['rr_name'],
+                                   record['rr_type'],
+                                   record['rr_data']
+                                   ),
+                           "success": True}
 
     return delete_response
 

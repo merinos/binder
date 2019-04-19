@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from binder import forms, helpers, models
 from binder import exceptions
 
+
 def get_record_from_uid(request, uid, dns_server, zone_name):
     if (dns_server in request.session and
             zone_name in request.session[dns_server] and
@@ -202,6 +203,7 @@ def view_edit_record(request, dns_server, zone_name, uid):
                    "form": form,
                    "uid": uid})
 
+
 def view_add_cname_record(request, dns_server, zone_name, record_name):
     """View to allow to add CNAME records."""
     this_server = get_object_or_404(models.BindServer, hostname=dns_server)
@@ -244,7 +246,12 @@ def view_add_cname_record(request, dns_server, zone_name, record_name):
 def view_delete_record(request, dns_server, zone_name):
     """View to handle the deletion of records."""
     dns_server = models.BindServer.objects.get(hostname=dns_server)
+    records = []
     rr_list = request.POST.getlist("rr_list")
+    for uid in rr_list:
+        record = get_record_from_uid(request, uid, dns_server.hostname, zone_name)
+        if record:
+            records.append(record)
 
     if len(rr_list) == 0:
         messages.error(request, "Select at least one record for deletion.")
@@ -257,23 +264,28 @@ def view_delete_record(request, dns_server, zone_name):
         if form.is_valid():
             form_cleaned = form.cleaned_data
             rr_list = form_cleaned["rr_list"]
-            try:
-                response = helpers.delete_record(form_cleaned["dns_server"],
-                                                 rr_list,
-                                                 form_cleaned["key_name"])
-            except exceptions.KeyringException as exc:
-                for record in rr_list:
-                    messages.error(request, "Deleting %s.%s failed: %s" %
-                                   (record, zone_name, exc))
-            else:
-                for record in response:
-                    if record['success'] == True:
-                        messages.success(request, "%s.%s was removed successfully." %
-                                         (record['record'], zone_name))
+            for uid in rr_list:
+                record = get_record_from_uid(request, uid, dns_server.hostname, zone_name)
+                if record:
+                    try:
+                        response = helpers.delete_record(form_cleaned["dns_server"],
+                                zone_name,
+                                record,
+                                form_cleaned["key_name"])
+                    except exceptions.KeyringException as exc:
+                        messages.error(request, "Deleting %s.%s %s %s failed: %s" %
+                                (record["rr_name"], zone_name,
+                                record["rr_type"], record["rr_data"], exc))
                     else:
-                        messages.error(request, "Deleting %s.%s failed: %s" %
-                                       (record['record'], zone_name, record['description']))
-                return redirect('zone_list',
+                        if response['success'] == True:
+                            messages.success(request, "%s.%s was removed successfully." %
+                                    (response['record'], zone_name))
+                        else:
+                            messages.error(request, "Deleting %s.%s failed: %s" %
+                                    (response['record'], zone_name, response['description']))
+                else:
+                    messages.error(request, "Deleting failed unable to find your record")
+            return redirect('zone_list',
                                 dns_server=dns_server,
                                 zone_name=zone_name)
     else:
@@ -287,5 +299,6 @@ def view_delete_record(request, dns_server, zone_name):
     return render(request, "bcommon/delete_record.html",
                   {"dns_server": dns_server,
                    "zone_name": zone_name,
-                   "rr_list": rr_list,
+                   'rr_list': rr_list,
+                   "records": records,
                    "form": form})
