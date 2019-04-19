@@ -70,6 +70,7 @@ class Key(models.Model):
         if self.name is None:
             return None
         try:
+            # XXX: this takes too much time (entropy issue I think)
             key_data = self.decrypt_keydata()
             keyring = dns.tsigkeyring.from_text({self.name: key_data})
         except binascii.Error as err:
