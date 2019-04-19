@@ -218,8 +218,7 @@ class BindServer(models.Model):
             # * Can happen if a TSIG key is required but a default_transfer_key is not specified.
             raise exceptions.TransferException("Unable to perform AXFR to list zone records. Did you forget to specify a default transfer key?")
 
-        names = zone.nodes.keys()
-        sorted(names)
+        names = sorted(zone.nodes.keys())
         record_array = []
         for current_name in names:
             current_record = zone[current_name].to_text(current_name)
