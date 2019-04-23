@@ -73,14 +73,14 @@ class PostTests(TestCase):
         response = self.client.post(reverse("delete_record",
                                             kwargs={'dns_server': dns_server,
                                                     'zone_name': zone_name}),
-                                            {"rr_list": ["testrecord1.testzone1.test.net",
-                                                         "testrecord2.testzone1.test.net"]})
+                                            {"rr_list": ["2dcff9df64b200a8f9f57c03f861cc15cee071e2",
+                                                         "2375e0b6f6469b1e70fbc1cd98a393f7f1de995d"]})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response,
                             '<input type="hidden" id="zone_name" name="zone_name" value="testzone1.test.net" />', html=True)
         self.assertContains(response,
-                            '<input type="hidden" id="rr_list" name="rr_list" value="[&#39;testrecord1.testzone1.test.net&#39;, &#39;testrecord2.testzone1.test.net&#39;]"/>',
+                            '<input type="hidden" id="rr_list" name="rr_list" value="[&#39;2dcff9df64b200a8f9f57c03f861cc15cee071e2&#39;, &#39;2375e0b6f6469b1e70fbc1cd98a393f7f1de995d&#39;]"/>',
                             html=True)
         self.assertContains(response,
                             '<input type="hidden" id="dns_server" name="dns_server" value="testserver.test.net" />',
