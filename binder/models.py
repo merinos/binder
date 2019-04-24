@@ -225,11 +225,17 @@ class BindServer(models.Model):
             for split_record in current_record.split("\n"):
                 current_record = shlex.split(split_record)
                 rr_dict = {}
+                data = []
                 rr_dict["rr_name"] = current_record[0]
                 rr_dict["rr_ttl"] = current_record[1]
                 rr_dict["rr_class"] = current_record[2]
                 rr_dict["rr_type"] = current_record[3]
-                rr_dict["rr_data"] = current_record[4]
+                for i in range(4, len(current_record)):
+                    if " " in current_record[i]:
+                        data.append('"{}"'.format(current_record[i]))
+                    else:
+                        data.append(current_record[i])
+                rr_dict["rr_data"] = " ".join(data)
                 rr_dict["rr_uid"] = hashlib.sha1("{}{}{}{}{}".format(
                             rr_dict["rr_name"],
                             rr_dict["rr_ttl"],
