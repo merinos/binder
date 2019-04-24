@@ -24,7 +24,7 @@
   <td>{{ current_record.rr_ttl }}</td>
   <td>{{ current_record.rr_class }}</td>
   <td>{{ current_record.rr_type }}</td>
-  <td>{{ current_record.rr_data }}</td>
+  <td>{{ current_record.rr_data|truncatechars:80 }}</td>
   <td>
     <div class="btn-toolbar" style="margin: 0;">
       {% if dynamic_dns_available %}
